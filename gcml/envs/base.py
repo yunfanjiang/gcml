@@ -14,10 +14,9 @@ class GoalReachingEnv(gym.Env):
         self, *args, **kwargs,
     ):
         self._goal = None
-        self._goal_distribution = None
 
     @abstractmethod
-    def reset(self, task_config: Any):
+    def reset(self, **task_config: Dict[str, Any]):
         """
         Reset a goal-reaching env given a task config.
         A task config can be a value that characterize the task.
@@ -39,13 +38,6 @@ class GoalReachingEnv(gym.Env):
         Return the sampled goal.
         """
         return self._goal
-
-    @property
-    def goal_distribution(self):
-        """
-        Return the distribution from which the goal is sampled.
-        """
-        return self._goal_distribution
 
 
 class MetaGoalReachingEnv(object):
