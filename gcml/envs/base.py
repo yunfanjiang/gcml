@@ -47,7 +47,6 @@ class MetaGoalReachingEnv(object):
 
     def __init__(
         self,
-        base_env: GoalReachingEnv,
         metric_fn: Callable[[np.ndarray, np.ndarray], Union[np.ndarray, float]],
         task_config_space: gym.Space,
         obs_key: str,
@@ -56,6 +55,7 @@ class MetaGoalReachingEnv(object):
     ):
         super(MetaGoalReachingEnv, self).__init__()
 
+        base_env = self._make_base_env()
         self._base_env = base_env
         self._metric_fn = metric_fn
         self._obs_key = obs_key
@@ -85,6 +85,10 @@ class MetaGoalReachingEnv(object):
         self._action_space = base_env.action_space
 
         self._task_config = None
+
+    @abstractmethod
+    def _make_base_env(self, *args, **kwargs) -> GoalReachingEnv:
+        raise NotImplementedError
 
     @property
     def observation_space(self):
