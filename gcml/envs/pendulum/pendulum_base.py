@@ -95,8 +95,8 @@ class PendulumEnv(GoalReachingEnv):
             axle = rendering.make_circle(0.05)
             axle.set_color(0, 0, 0)
             self.viewer.add_geom(axle)
-            fname = path.join(path.dirname(__file__), "assets/clockwise.png")
-            self.img = rendering.Image(fname, 1.0, 1.0)
+            f_name = path.join(path.dirname(__file__), "assets/clockwise.png")
+            self.img = rendering.Image(f_name, 1.0, 1.0)
             self.imgtrans = rendering.Transform()
             self.img.add_attr(self.imgtrans)
 
