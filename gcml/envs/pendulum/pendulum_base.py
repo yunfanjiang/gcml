@@ -28,9 +28,15 @@ class PendulumEnv(GoalReachingEnv):
         )
         self.observation_space = spaces.Dict(
             {
-                "base_obs": spaces.Box(low=-obs_high, high=obs_high, dtype=np.float32),
-                "achieved_goal": spaces.Box(low=-goal_high, high=goal_high, dtype=np.float32),
-                "achieved_state_goal": spaces.Box(low=-np.pi, high=np.pi, dtype=np.float32),
+                "base_obs": spaces.Box(
+                    low=-obs_high, high=obs_high, dtype=np.float32, shape=(3,)
+                ),
+                "achieved_goal": spaces.Box(
+                    low=-goal_high, high=goal_high, dtype=np.float32, shape=(2,)
+                ),
+                "achieved_state_goal": spaces.Box(
+                    low=-np.pi, high=np.pi, dtype=np.float32, shape=(1,)
+                ),
             }
         )
         self.seed()
@@ -52,16 +58,22 @@ class PendulumEnv(GoalReachingEnv):
 
         action = np.clip(action, -self.max_torque, self.max_torque)[0]
         self.last_action = action
-        costs = angle_normalize(theta) ** 2 + 0.1 * angular_speed ** 2 + 0.001 * (action ** 2)
-        new_angular_speed = angular_speed + (3 * g / (2 * l) * np.sin(theta) + 3.0 / (m * l ** 2) * action) * dt
-        new_angular_speed = np.clip(new_angular_speed, -self.max_angular_speed, self.max_angular_speed)
+        costs = (
+            angle_normalize(theta) ** 2
+            + 0.1 * angular_speed ** 2
+            + 0.001 * (action ** 2)
+        )
+        new_angular_speed = (
+            angular_speed
+            + (3 * g / (2 * l) * np.sin(theta) + 3.0 / (m * l ** 2) * action) * dt
+        )
+        new_angular_speed = np.clip(
+            new_angular_speed, -self.max_angular_speed, self.max_angular_speed
+        )
         new_theta = theta + new_angular_speed * dt
         self.state = np.array([new_theta, new_angular_speed])
 
-        done = False
-        if new_theta == self.observation_space["achieved_state_goal"]:
-            done = True
-        return self._get_obs_dict(), -costs, done, {}
+        return self._get_obs_dict(), -costs, False, {}
 
     def reset(self, g: float, m: float, l: float):
         self.g = g
@@ -75,7 +87,9 @@ class PendulumEnv(GoalReachingEnv):
     def _get_obs_dict(self):
         theta, angular_speed = self.state
         obs_dict = {
-            "base_obs": np.array([np.cos(theta), np.sin(theta), angular_speed], dtype=np.float32),
+            "base_obs": np.array(
+                [np.cos(theta), np.sin(theta), angular_speed], dtype=np.float32
+            ),
             "achieved_goal": np.array([np.cos(theta), np.sin(theta)], dtype=np.float32),
             "achieved_state_goal": np.array(theta, dtype=np.float32),
         }
@@ -115,39 +129,3 @@ class PendulumEnv(GoalReachingEnv):
 
 def angle_normalize(x):
     return ((x + np.pi) % (2 * np.pi)) - np.pi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
