@@ -24,9 +24,7 @@ class PendulumEnv(GoalReachingEnv):
 
         obs_high = np.array([1.0, 1.0, self.max_angular_speed], dtype=np.float32)
         goal_high = np.array([1.0, 1.0], dtype=np.float32)
-        self.action_space = spaces.Box(
-            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
-        )
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
         self.observation_space = spaces.Dict(
             {
                 "base_obs": spaces.Box(

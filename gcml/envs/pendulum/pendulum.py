@@ -6,7 +6,18 @@ from gcml.envs.pendulum.pendulum_base import PendulumEnv
 
 
 def _metric_fn(curr_theta, goal_theta):
-    return goal_theta - curr_theta
+    """
+    Calculate the angle difference between a target angle and the current angle.
+    :param curr_theta: float, [-pi, +pi]
+    :param goal_theta: float, [-pi, +pi]
+    :return: float, [0, +pi]
+    """
+    diff = goal_theta - curr_theta
+    if diff > np.pi:
+        diff -= 2 * np.pi
+    elif diff < -np.pi:
+        diff += 2 * np.pi
+    return abs(diff)
 
 
 class MetaPendulumEnv(MetaGoalReachingEnv):
@@ -15,9 +26,13 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
 
         task_config_space = gym.spaces.Dict(
             {
-                "gravity": gym.spaces.Box(low=0.16*9.8, high=2.64*9.8, dtype=np.float32),
-                "mass": gym.spaces.Box(low=0.5, high=2.0, dtype=np.float32),
-                "length": gym.spaces.Box(low=0.5, high=2.0, dtype=np.float32),
+                "gravity": gym.spaces.Box(
+                    low=0.16 * 9.8, high=2.64 * 9.8, dtype=np.float32, shape=(1,)
+                ),
+                "mass": gym.spaces.Box(low=0.5, high=1.5, dtype=np.float32, shape=(1,)),
+                "length": gym.spaces.Box(
+                    low=0.5, high=1.5, dtype=np.float32, shape=(1,)
+                ),
             }
         )
         self._task_config_space = task_config_space
@@ -28,14 +43,13 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
             task_config_space=task_config_space,
             obs_key="base_obs",
             achieved_goal_key="achieved_goal",
-            achieved_state_goal_key="achieved_state_goal"
+            achieved_state_goal_key="achieved_state_goal",
         )
 
     def _sample_task(self):
         sampled_task_config = {
-            "gravity": np.random.uniform(low=0.0, high=30.0),
-            "mass": np.random.uniform(low=0.5, high=2.0),
-            "length": np.random.uniform(low=0.5, high=2.0),
+            key: self._task_config_space[key].sample()
+            for key in self._task_config_space
         }
         return sampled_task_config
 
@@ -65,11 +79,10 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
         return next_obs, 0, False, info
 
     def _preprocess_action(self, action: np.ndarray) -> np.ndarray:
-        assert self.action_space.contains(action)
         return action
 
     def _base_obs_to_obs(
-            self, base_obs: Dict[str, np.ndarray]
+        self, base_obs: Dict[str, np.ndarray]
     ) -> Dict[str, np.ndarray]:
         return {
             "observation": base_obs[self._obs_key],
@@ -94,23 +107,3 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
 
     def render(self):
         self._base_env.render()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
