@@ -13,6 +13,7 @@ class PendulumEnv(GoalReachingEnv):
 
         self.max_angular_speed = 8.0
         self.max_torque = 2.0
+        self.action_scale = 2.0
         self.dt = 0.05
         self.g = None
         self.m = None
@@ -24,7 +25,7 @@ class PendulumEnv(GoalReachingEnv):
         obs_high = np.array([1.0, 1.0, self.max_angular_speed], dtype=np.float32)
         goal_high = np.array([1.0, 1.0], dtype=np.float32)
         self.action_space = spaces.Box(
-            low=-self.max_torque, high=self.max_torque, shape=(1,), dtype=np.float32
+            low=-1.0, high=1.0, shape=(1,), dtype=np.float32
         )
         self.observation_space = spaces.Dict(
             {
@@ -56,6 +57,7 @@ class PendulumEnv(GoalReachingEnv):
         l = self.l
         dt = self.dt
 
+        action *= self.action_scale
         action = np.clip(action, -self.max_torque, self.max_torque)[0]
         self.last_action = action
         costs = (
