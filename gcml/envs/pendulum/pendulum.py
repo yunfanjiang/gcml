@@ -32,12 +32,8 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
         )
 
     def _sample_task(self):
-        # g values on different planets
-        gravities = np.array(
-            [0.37*9.8, 0.98*9.8, 1*9.8, 0.16*9.8, 0.38*9.8, 2.64*9.8, 1.15*9.8, 0.93*9.8, 1.22*9.8], dtype=np.float32
-        )
         sampled_task_config = {
-            "gravity": np.random.choice(gravities, replace=False),
+            "gravity": np.random.uniform(low=0.0, high=30.0),
             "mass": np.random.uniform(low=0.5, high=2.0),
             "length": np.random.uniform(low=0.5, high=2.0),
         }
