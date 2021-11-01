@@ -2,4 +2,5 @@ import torch.nn as nn
 
 
 class BaseGoalReachAgent(nn.Module):
-    pass
+    def step(self, *args, **kwargs):
+        raise NotImplementedError
