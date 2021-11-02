@@ -59,9 +59,15 @@ class LunarAnyLander(MetaGoalReachingEnv):
         }
         return sampled_task_config
 
-    def reset(self, sample_new_goal: bool = True,) -> Dict[str, np.ndarray]:
+    def reset(
+        self, sample_new_goal: bool = True, predefined_goal=None
+    ) -> Dict[str, np.ndarray]:
         if sample_new_goal:
             self._base_env.sample_goal(height=self._task_config["height"])
+        elif predefined_goal is not None:
+            self._base_env.set_goal(predefined_goal)
+        else:
+            raise ValueError(f"Either sample a new goal or provide a predefined goal")
         base_obs = self._base_env.reset(
             height=self._task_config["height"],
             main_engine_power=self._task_config["main_engine_power"].item(),
