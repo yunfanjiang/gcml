@@ -1,23 +1,28 @@
-from typing import Dict, Callable
+from typing import Dict, Callable, Union
 
 import torch
+import numpy as np
 import torch.nn.functional as F
+
+from ..algorithms.common.utils import np_dict_to_tensor_dict
 
 
 class MetaGoalReachAgent(object):
     def __init__(
-        self, n_layers: int, activation: Callable[[torch.Tensor], torch.Tensor],
+        self, n_layers: int, activation: Callable[[torch.Tensor], torch.Tensor], device,
     ):
         self._n_layers = n_layers
         self._activation = activation
+        self._device = device
 
     def act(
         self,
-        input_dict: Dict[str, torch.Tensor],
-        parameters: Dict[str, torch.Tensor],
+        input_dict: Dict[str, Union[torch.Tensor, np.ndarray]],
+        parameters: Dict[str, Union[torch.Tensor, np.ndarray]],
         noise_coeff: float,
         greedy: bool,
     ):
+        input_dict = np_dict_to_tensor_dict(input_dict, self._device)
         inputs = torch.cat(
             [
                 input_dict["observation"],

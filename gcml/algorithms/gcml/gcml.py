@@ -313,6 +313,7 @@ class GCML(GCLBase):
             agent=self._meta_learner,
             agent_parameters=agent_parameters,
             env=self._meta_env,
+            episode_length=self._trajectory_len,
             greedy=greedy,
             exploration_coeff=exp_coeff,
             sample_new_goal=sample_new_goal,
