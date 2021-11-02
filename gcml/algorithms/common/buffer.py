@@ -34,3 +34,7 @@ class Buffer(object):
         clear all added trajectories.
         """
         raise NotImplementedError
+
+    @property
+    def all_trajectories(self):
+        raise NotImplementedError
