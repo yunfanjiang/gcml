@@ -14,7 +14,6 @@ def sample_trajectory(
 
 def evaluate_batch_trajectories(
         batch_trajectories,
-        batch_goals,
         goal_threshold,
 ):
     raise NotImplementedError
