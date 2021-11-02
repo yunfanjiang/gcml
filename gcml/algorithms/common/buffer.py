@@ -23,7 +23,14 @@ class Buffer(object):
         """
         Call `hindsight_relabel()` to generate expert transitions using all added trajectories.
         The returned dict should contain keys
-        `observation`, `achieved_goal`, `achieved_state_goal`, `desired_goal`, `desired_state_goal`, and `task_config`.
+        `action`, `observation`, `achieved_goal`, `achieved_state_goal`,
+        `desired_goal`, `desired_state_goal`, and `task_config`.
         Each value should be a numpy array with shape (N, *)
+        """
+        raise NotImplementedError
+
+    def clear_buffer(self):
+        """
+        clear all added trajectories.
         """
         raise NotImplementedError
