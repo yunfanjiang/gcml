@@ -48,19 +48,13 @@ def sample_trajectory(
 def evaluate_batch_trajectories(
     batch_trajectories: List[Trajectory], goal_threshold: float, metric_fn: Callable,
 ):
-    success_rate = []
-    for trajectory in batch_trajectories:
-        achieved_state_goal = [
-            transition.cur_achieved_s_goal for transition in trajectory
-        ]
-        desired_state_goal = [transition.s_goal for transition in trajectory]
-        achieved_state_goal = np.stack(achieved_state_goal, axis=0)
-        desired_state_goal = np.stack(desired_state_goal, axis=0)
-        distance = metric_fn(achieved_state_goal, desired_state_goal)
-        is_successful = distance <= goal_threshold
-        is_successful = np.any(is_successful)
-        success_rate.append(is_successful)
-    return np.mean(success_rate)
+    achieved_state_goal = [trajectory[-1].next_achieved_s_goal for trajectory in batch_trajectories]
+    desired_state_goal = [trajectory[-1].s_goal for trajectory in batch_trajectories]
+    achieved_state_goal = np.stack(achieved_state_goal, axis=0)
+    desired_state_goal = np.stack(desired_state_goal, axis=0)
+    distance = metric_fn(achieved_state_goal, desired_state_goal)
+    is_successful = distance <= goal_threshold
+    return np.mean(is_successful.float())
 
 
 def np_dict_to_tensor_dict(np_dict: dict, device):
