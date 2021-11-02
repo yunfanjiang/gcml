@@ -6,6 +6,8 @@ from .constants import Trajectory
 def sample_trajectory(
         agent: MetaGoalReachAgent,
         env: MetaGoalReachingEnv,
+        greedy: bool,
+        exploration_coeff: float,
 ) -> Trajectory:
     raise NotImplementedError
 
