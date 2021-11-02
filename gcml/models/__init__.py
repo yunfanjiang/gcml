@@ -1,1 +1,1 @@
-from .base import BaseGoalReachAgent
+from .meta_agent import MetaGoalReachAgent
