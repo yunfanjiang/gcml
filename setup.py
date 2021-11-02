@@ -29,5 +29,6 @@ setup(
     description="Stanford CS330 Fall 2021 Goal-Conditioned Meta-Learning",
     packages=search_packages(),
     include_package_data=True,
-    zip_safe=False, install_requires=['numpy', 'gym']
+    zip_safe=False,
+    install_requires=["numpy", "gym"],
 )

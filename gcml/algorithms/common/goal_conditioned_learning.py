@@ -5,6 +5,7 @@ class GCLBase(ABC):
     """
     Abstract base class for goal-conditioned learning, e.g., GCSL and GCML.
     """
+
     @abstractmethod
     def _compute_loss(self, *args, **kwargs):
         """
