@@ -39,6 +39,12 @@ class GoalReachingEnv(gym.Env):
         """
         return self._goal
 
+    def set_goal(self, predefined_goal):
+        """
+        Set the goal with a predefined goal.
+        """
+        self._goal = predefined_goal
+
 
 class MetaGoalReachingEnv(object):
     """
@@ -94,6 +100,10 @@ class MetaGoalReachingEnv(object):
     def action_space(self):
         return self._action_space
 
+    @property
+    def current_goal(self):
+        return self._base_env.goal
+
     def sample_task(self):
         """
         Sample a new task configuration from task distribution
@@ -107,7 +117,7 @@ class MetaGoalReachingEnv(object):
         raise NotImplementedError
 
     def reset(
-        self, sample_new_goal: bool = True, *args, **kwargs
+        self, sample_new_goal: bool = True, predefined_goal=None, *args, **kwargs
     ) -> Dict[str, np.ndarray]:
         """
         Reset the base env with task configuration and optionally sample a new goal
