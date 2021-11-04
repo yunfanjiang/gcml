@@ -125,6 +125,9 @@ class GCML(GCLBase):
 
         # instantiate buffers
         self._inner_loop_buffer = Buffer()
+        # this buffer store trajectories before the adaptation for evaluation purpose only
+        # because we do not evaluate exploration trajectories, we separate buffers
+        self._pre_adapt_eval_buffer = Buffer()
 
         # tensorboard
         tb_dir = os.path.join(tb_log_dir, experiment_name)
@@ -184,6 +187,8 @@ class GCML(GCLBase):
                     )
                     self._inner_loop_buffer.add_trajectory(generated_trajectory)
                 # execution trajectory
+                # clear evaluation buffer
+                self._pre_adapt_eval_buffer.clear_buffer()
                 used_goals = []
                 for _ in range(self._n_shots):
                     generated_trajectory = self._sample_trajectory(
@@ -193,11 +198,12 @@ class GCML(GCLBase):
                     )
                     used_goals.append(self._meta_env.current_goal)
                     self._inner_loop_buffer.add_trajectory(generated_trajectory)
+                    self._pre_adapt_eval_buffer.add_trajectory(generated_trajectory)
 
                 # measure success rate before the adaptation
                 pre_adapt_success_rate_batch.append(
                     U.evaluate_batch_trajectories(
-                        self._inner_loop_buffer.all_trajectories,
+                        self._pre_adapt_eval_buffer.all_trajectories,
                         self._goal_threshold,
                         self._meta_env.metric_fn,
                     )
