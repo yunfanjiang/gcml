@@ -104,6 +104,10 @@ class MetaGoalReachingEnv(object):
     def current_goal(self):
         return self._base_env.goal
 
+    @property
+    def metric_fn(self):
+        return self._metric_fn
+
     def sample_task(self):
         """
         Sample a new task configuration from task distribution

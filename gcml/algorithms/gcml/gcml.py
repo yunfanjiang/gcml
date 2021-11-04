@@ -1,11 +1,10 @@
-from typing import Optional, List, Callable, Dict
+from typing import List, Callable, Dict, Union
 import os
 
 import torch
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 from torch.utils import tensorboard
 from torch import autograd
 from tqdm import tqdm
@@ -13,8 +12,9 @@ from pprint import pprint
 
 from ..common import GCLBase, Buffer
 from ...envs.base import MetaGoalReachingEnv
-from ...models import MetaGoalReachAgent
+from ...models import MetaGoalReachAgentDiscrete, MetaGoalReachAgentContinuous
 from ..common import utils as U
+from ...models.utils import np_dict_to_tensor_dict
 
 
 class GCML(GCLBase):
@@ -22,10 +22,10 @@ class GCML(GCLBase):
         self,
         experiment_name: str,
         meta_env: MetaGoalReachingEnv,
+        meta_learner: Union[MetaGoalReachAgentDiscrete, MetaGoalReachAgentContinuous],
         learner_in_size: int,
         learner_out_size: int,
         learner_n_layers: int,
-        learner_activation: str,
         learner_hidden: List[int],
         device: torch.device,
         optimizer_name: str,
@@ -36,11 +36,10 @@ class GCML(GCLBase):
         n_shots: int = 1,
         n_tasks: int = 5,
         n_query_traj: int = 1,
-        n_outer_steps: int = 1e6,
+        n_outer_steps: int = int(1e6),
         n_inner_steps: int = 1,
         trajectory_len: int = 20,
         n_exploration_trajectory: int = 1,
-        boltzmann_exploration_coeff: float = 0.0,
         goal_threshold: float = 0.05,
         log_interval: int = 5,
         val_interval: int = 100,
@@ -55,6 +54,10 @@ class GCML(GCLBase):
         # create meta parameters
         meta_parameters = {}
         in_size = learner_in_size
+        learner_hidden.append(learner_out_size)
+        assert learner_n_layers == len(
+            learner_hidden
+        ), f"Inconsistent n_layers and hidden sizes provided"
         for i in range(learner_n_layers - 1):
             meta_parameters[f"w{i}"] = nn.init.xavier_normal_(
                 torch.empty(
@@ -69,16 +72,11 @@ class GCML(GCLBase):
             torch.empty(learner_out_size, in_size, requires_grad=True, device=device,)
         )
         meta_parameters[f"b{learner_n_layers - 1}"] = nn.init.zeros_(
-            torch.empty(learner_out_size, in_size, requires_grad=True, device=device,)
+            torch.empty(learner_out_size, requires_grad=True, device=device,)
         )
         self._meta_parameters = meta_parameters
 
-        activation_fn = getattr(F, learner_activation)
-        if activation_fn is None:
-            raise ValueError(f"Unknown activation provided {learner_activation}")
-        self._meta_learner = MetaGoalReachAgent(
-            n_layers=learner_n_layers, activation=activation_fn
-        )
+        self._meta_learner = meta_learner
         self._loss_fn = loss_fn
 
         optimizer_class = getattr(optim, optimizer_name)
@@ -87,7 +85,7 @@ class GCML(GCLBase):
 
         # initialize optimizer
         self._optimizer = optimizer_class(
-            params=meta_parameters, lr=outer_lr, **optim_kwargs,
+            params=list(meta_parameters.values()), lr=outer_lr, **optim_kwargs,
         )
         self._inner_lr = inner_lr
 
@@ -117,10 +115,6 @@ class GCML(GCLBase):
         ), f"Invalid number of exploration trajectories provided {n_exploration_trajectory}"
         self._n_exp_trajectory = n_exploration_trajectory
         assert (
-            boltzmann_exploration_coeff > 0
-        ), f"Invalid exploration coeff provided {boltzmann_exploration_coeff}"
-        self._exp_coeff = boltzmann_exploration_coeff
-        assert (
             goal_threshold >= 0
         ), f"Invalid value of goal threshold provided {goal_threshold}"
         self._goal_threshold = goal_threshold
@@ -141,18 +135,17 @@ class GCML(GCLBase):
     ):
         parameters = {k: torch.clone(v) for k, v in self._meta_parameters.items()}
 
-        # forward the learner to get actions
-        actions = self._meta_learner.act(
-            input_dict=obs_dict,
-            parameters=parameters,
-            noise_coeff=self._exp_coeff,
-            greedy=True,
+        # learner act, we dont use the returned actions to calculate loss
+        # we use logits actually
+        _ = self._meta_learner.act(
+            input_dict=obs_dict, parameters=parameters, greedy=True,
         )  # (N, action_dim)
+        logits = self._meta_learner.logits
 
         # now start `self._n_inner_steps` times adaptation
         for _ in range(self._n_inner_steps):
             # calculate the adaptation loss
-            adapt_loss = self._compute_loss(predictions=actions, targets=targets)
+            adapt_loss = self._compute_loss(input=logits, target=targets)
             # calculate the adaptation gradients with `autograd.grad`
             adapt_grad = autograd.grad(
                 outputs=adapt_loss,
@@ -187,7 +180,6 @@ class GCML(GCLBase):
                     generated_trajectory = self._sample_trajectory(
                         agent_parameters=self._meta_parameters,
                         greedy=False,
-                        exp_coeff=1,
                         sample_new_goal=True,
                     )
                     self._inner_loop_buffer.add_trajectory(generated_trajectory)
@@ -197,7 +189,6 @@ class GCML(GCLBase):
                     generated_trajectory = self._sample_trajectory(
                         agent_parameters=self._meta_parameters,
                         greedy=True,
-                        exp_coeff=self._exp_coeff,
                         sample_new_goal=True,
                     )
                     used_goals.append(self._meta_env.current_goal)
@@ -206,13 +197,15 @@ class GCML(GCLBase):
                 # measure success rate before the adaptation
                 pre_adapt_success_rate_batch.append(
                     U.evaluate_batch_trajectories(
-                        self._inner_loop_buffer.all_trajectories, self._goal_threshold,
+                        self._inner_loop_buffer.all_trajectories,
+                        self._goal_threshold,
+                        self._meta_env.metric_fn,
                     )
                 )
 
             # generate expert demonstrations with hindsight relabeling
             expert_demo_dict = self._inner_loop_buffer.generate_expert_demo()
-            expert_demo_dict = U.np_dict_to_tensor_dict(
+            expert_demo_dict = np_dict_to_tensor_dict(
                 expert_demo_dict, device=self._device
             )
             # pop expert actions
@@ -230,14 +223,15 @@ class GCML(GCLBase):
                     generated_trajectory = self._sample_trajectory(
                         agent_parameters=adapted_parameters,
                         greedy=True,
-                        exp_coeff=self._exp_coeff,
                         sample_new_goal=False,
                         predefined_goal=goal,
                     )
                 trajectories_to_be_evaluated.append(generated_trajectory)
             post_adapt_success_rate_batch.append(
                 U.evaluate_batch_trajectories(
-                    trajectories_to_be_evaluated, self._goal_threshold,
+                    trajectories_to_be_evaluated,
+                    self._goal_threshold,
+                    self._meta_env.metric_fn,
                 )
             )
 
@@ -250,36 +244,33 @@ class GCML(GCLBase):
                     generated_trajectory = self._sample_trajectory(
                         agent_parameters=adapted_parameters,
                         greedy=True,
-                        exp_coeff=self._exp_coeff,
                         sample_new_goal=True,
                     )
                     self._inner_loop_buffer.add_trajectory(generated_trajectory)
             # measure success rate for query data
             query_success_rate_batch.append(
                 U.evaluate_batch_trajectories(
-                    self._inner_loop_buffer.all_trajectories, self._goal_threshold,
+                    self._inner_loop_buffer.all_trajectories,
+                    self._goal_threshold,
+                    self._meta_env.metric_fn,
                 )
             )
 
             # generate expert demonstrations with hindsight relabeling
             expert_demo_dict = self._inner_loop_buffer.generate_expert_demo()
-            expert_demo_dict = U.np_dict_to_tensor_dict(
+            expert_demo_dict = np_dict_to_tensor_dict(
                 expert_demo_dict, device=self._device
             )
             # pop expert actions
             targets = expert_demo_dict.pop("action")
 
-            # get predicted actions on the query data with adapted parameters
-            predicted_actions = self._meta_learner.act(
-                input_dict=expert_demo_dict,
-                parameters=adapted_parameters,
-                noise_coeff=self._exp_coeff,
-                greedy=True,
+            # get logits on the query data with adapted parameters
+            _ = self._meta_learner.act(
+                input_dict=expert_demo_dict, parameters=adapted_parameters, greedy=True,
             )
+            logits = self._meta_learner.logits
             # calculate loss on query data
-            query_loss = self._compute_loss(
-                predictions=predicted_actions, targets=targets
-            )
+            query_loss = self._compute_loss(input=logits, target=targets)
             outer_loss_batch.append(query_loss)
 
         # finish the iteration over task
@@ -298,16 +289,11 @@ class GCML(GCLBase):
         loss.backward()
         self._optimizer.step()
 
-    def _compute_loss(self, predictions: torch.Tensor, targets: torch.Tensor):
-        return self._loss_fn(predicts=predictions, targets=targets)
+    def _compute_loss(self, input: torch.Tensor, target: torch.Tensor):
+        return self._loss_fn(input=input, target=target)
 
     def _sample_trajectory(
-        self,
-        agent_parameters,
-        greedy: bool,
-        exp_coeff: float,
-        sample_new_goal,
-        predefined_goal=None,
+        self, agent_parameters, greedy: bool, sample_new_goal, predefined_goal=None,
     ):
         return U.sample_trajectory(
             agent=self._meta_learner,
@@ -315,7 +301,6 @@ class GCML(GCLBase):
             env=self._meta_env,
             episode_length=self._trajectory_len,
             greedy=greedy,
-            exploration_coeff=exp_coeff,
             sample_new_goal=sample_new_goal,
             predefined_goal=predefined_goal,
         )

@@ -1,1 +1,5 @@
-from .meta_agent import MetaGoalReachAgent
+from .meta_agent import (
+    MetaGoalReachAgentBase,
+    MetaGoalReachAgentDiscrete,
+    MetaGoalReachAgentContinuous,
+)

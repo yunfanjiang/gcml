@@ -4,10 +4,15 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 
-from ..algorithms.common.utils import np_dict_to_tensor_dict
+from .utils import np_dict_to_tensor_dict
 
 
-class MetaGoalReachAgent(object):
+class MetaGoalReachAgentBase(object):
+    """
+    Base class for meta goal-reaching agent.
+    It implements a method to get logits, which is further processed for discrete outputs or continuous outputs.
+    """
+
     def __init__(
         self, n_layers: int, activation: Callable[[torch.Tensor], torch.Tensor], device,
     ):
@@ -15,12 +20,10 @@ class MetaGoalReachAgent(object):
         self._activation = activation
         self._device = device
 
-    def act(
+    def _get_logits(
         self,
         input_dict: Dict[str, Union[torch.Tensor, np.ndarray]],
         parameters: Dict[str, Union[torch.Tensor, np.ndarray]],
-        noise_coeff: float,
-        greedy: bool,
     ):
         input_dict = np_dict_to_tensor_dict(input_dict, self._device)
         inputs = torch.cat(
@@ -42,9 +45,70 @@ class MetaGoalReachAgent(object):
             weight=parameters[f"w{self._n_layers - 1}"],
             bias=parameters[f"b{self._n_layers - 1}"],
         )
-        logits *= 1 - noise_coeff
+        self._logits = logits
+
+    def act(
+        self,
+        input_dict: Dict[str, Union[torch.Tensor, np.ndarray]],
+        parameters: Dict[str, Union[torch.Tensor, np.ndarray]],
+        greedy: bool,
+    ):
+        """
+        First call `self._get_logits()`, then process the logits to get corresponding types of outputs.
+        Note that in general we do not propagate gradients from actions (we propagate gradients back from logits).
+        """
+        raise NotImplementedError
+
+    @property
+    def logits(self):
+        return self._logits
+
+
+class MetaGoalReachAgentDiscrete(MetaGoalReachAgentBase):
+    def act(
+        self,
+        input_dict: Dict[str, Union[torch.Tensor, np.ndarray]],
+        parameters: Dict[str, Union[torch.Tensor, np.ndarray]],
+        greedy: bool,
+    ):
+        self._get_logits(
+            input_dict=input_dict, parameters=parameters,
+        )
         if greedy:
-            action = torch.argmax(logits, dim=-1)
+            action = torch.argmax(self.logits, dim=-1)
         else:
-            action = torch.distributions.Categorical(logits=logits)
+            action = torch.distributions.Categorical(logits=self.logits).sample()
+        return action
+
+
+class MetaGoalReachAgentContinuous(MetaGoalReachAgentBase):
+    def __init__(
+        self,
+        n_layers: int,
+        activation: Callable[[torch.Tensor], torch.Tensor],
+        device,
+        std: float,
+    ):
+        super(MetaGoalReachAgentContinuous, self).__init__(
+            n_layers=n_layers, activation=activation, device=device,
+        )
+        self._std = std
+
+    def act(
+        self,
+        input_dict: Dict[str, Union[torch.Tensor, np.ndarray]],
+        parameters: Dict[str, Union[torch.Tensor, np.ndarray]],
+        greedy: bool,
+    ):
+        self._get_logits(
+            input_dict=input_dict, parameters=parameters,
+        )
+        if greedy:
+            # if greedy, return the regressed action
+            action = self.logits
+        else:
+            # if not greedy, sample from Gaussian distributions centered at logits
+            action = torch.distributions.Normal(
+                loc=self.logits, scale=self._std
+            ).sample()
         return action

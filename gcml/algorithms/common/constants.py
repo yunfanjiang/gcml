@@ -4,16 +4,16 @@ import numpy as np
 
 
 class Transition(NamedTuple):
-    cur_obs: np.ndarray
-    cur_achieved_goal: np.ndarray
-    cur_achieved_s_goal: np.ndarray
+    observation: np.ndarray
+    achieved_goal: np.ndarray
+    achieved_state_goal: np.ndarray
     action: np.ndarray
     next_obs: np.ndarray
     next_achieved_goal: np.ndarray
     next_achieved_s_goal: np.ndarray
     task_config: np.ndarray
-    goal: np.ndarray
-    s_goal: np.ndarray
+    desired_goal: np.ndarray
+    desired_state_goal: np.ndarray
 
 
 class RLTransition(Transition):

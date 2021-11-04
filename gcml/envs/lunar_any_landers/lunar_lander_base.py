@@ -148,7 +148,7 @@ class LunarLander(GoalReachingEnv, EzPickle):
         chunk_right_idx = chunk_left_idx + 1
         target_y = 0.5 * (smooth_y[chunk_left_idx] + smooth_y[chunk_right_idx])
         target_y = target_y / (VIEWPORT_H / SCALE / 2)
-        base_goal = np.array([sampled_x, target_y])
+        base_goal = np.array([sampled_x, target_y], dtype=np.float32)
         self._goal = base_goal
 
     def reset(
