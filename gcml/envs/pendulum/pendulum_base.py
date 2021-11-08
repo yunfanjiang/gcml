@@ -56,7 +56,7 @@ class PendulumEnv(GoalReachingEnv):
         dt = self.dt
 
         action *= self.action_scale
-        action = np.clip(action, -self.max_torque, self.max_torque)[0]
+        action = np.clip(action, -self.max_torque, self.max_torque)
         self.last_action = action
         costs = (
             angle_normalize(theta) ** 2
@@ -91,7 +91,7 @@ class PendulumEnv(GoalReachingEnv):
                 [np.cos(theta), np.sin(theta), angular_speed], dtype=np.float32
             ),
             "achieved_goal": np.array([np.cos(theta), np.sin(theta)], dtype=np.float32),
-            "achieved_state_goal": np.array(theta, dtype=np.float32),
+            "achieved_state_goal": np.array([theta], dtype=np.float32),
         }
         return obs_dict
 

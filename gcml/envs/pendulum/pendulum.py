@@ -53,9 +53,13 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
         }
         return sampled_task_config
 
-    def reset(self, sample_new_goal: bool = True,) -> Dict[str, np.ndarray]:
+    def reset(self, sample_new_goal: bool = True, predefined_goal=None) -> Dict[str, np.ndarray]:
         if sample_new_goal:
             self._base_env.sample_goal()
+        elif predefined_goal is not None:
+            self._base_env.set_goal(predefined_goal)
+        else:
+            raise ValueError(f"Either sample a new goal or provide a predefined goal")
         base_obs = self._base_env.reset(
             g=self._task_config["gravity"].item(),
             m=self._task_config["mass"].item(),
@@ -95,7 +99,7 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
     ) -> Dict[str, np.ndarray]:
         return {
             "desired_goal": np.array([np.cos(goal), np.sin(goal)], dtype=np.float32),
-            "desired_state_goal": goal,
+            "desired_state_goal": np.array([goal], dtype=np.float32),
         }
 
     def _task_config_to_obs(self) -> Dict[str, np.ndarray]:
