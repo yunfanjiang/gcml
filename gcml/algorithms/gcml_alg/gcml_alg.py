@@ -165,9 +165,9 @@ class GCML(GCLBase):
 
     def _outer_step(self, train: bool):
         outer_loss_batch = []
-        pre_adapt_success_rate_batch = []
-        post_adapt_success_rate_batch = []
-        query_success_rate_batch = []
+        pre_adapt_distance_batch = []
+        post_adapt_distance_batch = []
+        query_distance_batch = []
 
         for task_i in range(self._n_tasks):
             # sample a new task
@@ -200,8 +200,8 @@ class GCML(GCLBase):
                     self._inner_loop_buffer.add_trajectory(generated_trajectory)
                     self._pre_adapt_eval_buffer.add_trajectory(generated_trajectory)
 
-                # measure success rate before the adaptation
-                pre_adapt_success_rate_batch.append(
+                # measure distance before the adaptation
+                pre_adapt_distance_batch.append(
                     U.evaluate_batch_trajectories(
                         self._pre_adapt_eval_buffer.all_trajectories,
                         self._goal_threshold,
@@ -222,7 +222,7 @@ class GCML(GCLBase):
                 obs_dict=expert_demo_dict, targets=targets, train=train,
             )
 
-            # measure post-adaptation success rate
+            # measure post-adaptation distance
             trajectories_to_be_evaluated = []
             for goal in used_goals:
                 with torch.no_grad():
@@ -233,7 +233,7 @@ class GCML(GCLBase):
                         predefined_goal=goal,
                     )
                 trajectories_to_be_evaluated.append(generated_trajectory)
-            post_adapt_success_rate_batch.append(
+            post_adapt_distance_batch.append(
                 U.evaluate_batch_trajectories(
                     trajectories_to_be_evaluated,
                     self._goal_threshold,
@@ -253,8 +253,8 @@ class GCML(GCLBase):
                         sample_new_goal=True,
                     )
                     self._inner_loop_buffer.add_trajectory(generated_trajectory)
-            # measure success rate for query data
-            query_success_rate_batch.append(
+            # measure distance for query data
+            query_distance_batch.append(
                 U.evaluate_batch_trajectories(
                     self._inner_loop_buffer.all_trajectories,
                     self._goal_threshold,
@@ -281,14 +281,14 @@ class GCML(GCLBase):
 
         # finish the iteration over task
         outer_loss = torch.mean(torch.stack(outer_loss_batch))
-        pre_adapt_success_rate = np.mean(pre_adapt_success_rate_batch)
-        post_adapt_success_rate = np.mean(post_adapt_success_rate_batch)
-        query_success_rate = np.mean(query_success_rate_batch)
+        pre_adapt_distance = np.mean(pre_adapt_distance_batch)
+        post_adapt_distance = np.mean(post_adapt_distance_batch)
+        query_distance = np.mean(query_distance_batch)
         return (
             outer_loss,
-            pre_adapt_success_rate,
-            post_adapt_success_rate,
-            query_success_rate,
+            pre_adapt_distance,
+            post_adapt_distance,
+            query_distance,
         )
 
     def _take_gradient_step(self, loss: torch.Tensor):
@@ -319,9 +319,9 @@ class GCML(GCLBase):
             self._optimizer.zero_grad()
             (
                 outer_loss,
-                pre_adapt_success_rate,
-                post_adapt_success_rate,
-                query_success_rate,
+                pre_adapt_distance,
+                post_adapt_distance,
+                query_distance,
             ) = self._outer_step(train=True)
             self._take_gradient_step(outer_loss)
 
@@ -329,9 +329,9 @@ class GCML(GCLBase):
                 printed_info = {
                     "Iteration:": step_idx,
                     "Loss:": outer_loss.item(),
-                    "Pre-adaptation success rate:": pre_adapt_success_rate,
-                    "Post-adaptation success rate:": post_adapt_success_rate,
-                    "Post-adaptation query success rate": query_success_rate,
+                    "Pre-adaptation distance:": pre_adapt_distance,
+                    "Post-adaptation distance:": post_adapt_distance,
+                    "Post-adaptation query distance": query_distance,
                 }
                 pprint(printed_info)
 
@@ -341,30 +341,30 @@ class GCML(GCLBase):
                 )
                 self._writer.add_scalar(
                     "train_success_rate/pre_adapt_support",
-                    pre_adapt_success_rate,
+                    pre_adapt_distance,
                     step_idx,
                 )
                 self._writer.add_scalar(
                     "train_success_rate/post_adapt_support",
-                    post_adapt_success_rate,
+                    post_adapt_distance,
                     step_idx,
                 )
                 self._writer.add_scalar(
-                    "train_success_rate/post_adapt_query", query_success_rate, step_idx,
+                    "train_success_rate/post_adapt_query", query_distance, step_idx,
                 )
 
             if step_idx % self._val_interval == 0:
                 (
                     outer_loss,
-                    pre_adapt_success_rate,
-                    post_adapt_success_rate,
-                    query_success_rate,
+                    pre_adapt_distance,
+                    post_adapt_distance,
+                    query_distance,
                 ) = self._outer_step(train=False)
                 printed_info = {
                     "Val_Loss:": outer_loss.item(),
-                    "Val_Pre-adaptation success rate:": pre_adapt_success_rate,
-                    "Val_Post-adaptation success rate:": post_adapt_success_rate,
-                    "Val_Post-adaptation query success rate": query_success_rate,
+                    "Val_Pre-adaptation distance:": pre_adapt_distance,
+                    "Val_Post-adaptation distance:": post_adapt_distance,
+                    "Val_Post-adaptation query distance": query_distance,
                 }
                 pprint(printed_info)
 
@@ -373,17 +373,15 @@ class GCML(GCLBase):
                     "loss/val", outer_loss.item(), step_idx,
                 )
                 self._writer.add_scalar(
-                    "val_success_rate/pre_adapt_support",
-                    pre_adapt_success_rate,
-                    step_idx,
+                    "val_success_rate/pre_adapt_support", pre_adapt_distance, step_idx,
                 )
                 self._writer.add_scalar(
                     "val_success_rate/post_adapt_support",
-                    post_adapt_success_rate,
+                    post_adapt_distance,
                     step_idx,
                 )
                 self._writer.add_scalar(
-                    "val_success_rate/post_adapt_query", query_success_rate, step_idx,
+                    "val_success_rate/post_adapt_query", query_distance, step_idx,
                 )
 
     def test(self, *args, **kwargs):

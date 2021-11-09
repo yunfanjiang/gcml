@@ -53,5 +53,4 @@ def evaluate_batch_trajectories(
     achieved_state_goal = np.stack(achieved_state_goal, axis=0)
     desired_state_goal = np.stack(desired_state_goal, axis=0)
     distance = metric_fn(achieved_state_goal, desired_state_goal)
-    is_successful = distance <= goal_threshold
-    return np.mean(is_successful)
+    return np.mean(distance)
