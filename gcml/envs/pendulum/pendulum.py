@@ -12,12 +12,17 @@ def _metric_fn(curr_theta, goal_theta):
     :param goal_theta: float, [-pi, +pi]
     :return: float, [0, +pi]
     """
+    goal_theta = np.array(goal_theta)
+    curr_theta = np.array(curr_theta)
+    if goal_theta.ndim == 1:
+        goal_theta = goal_theta[np.newaxis, ...]
+    if curr_theta.ndim == 1:
+        curr_theta = curr_theta[np.newaxis, ...]
+
     diff = goal_theta - curr_theta
-    if diff > np.pi:
-        diff -= 2 * np.pi
-    elif diff < -np.pi:
-        diff += 2 * np.pi
-    return abs(diff)
+    diff[diff > np.pi] = diff[diff > np.pi] - 2 * np.pi
+    diff[diff < -np.pi] = diff[diff < -np.pi] + 2 * np.pi
+    return np.abs(diff)
 
 
 class MetaPendulumEnv(MetaGoalReachingEnv):
@@ -53,7 +58,9 @@ class MetaPendulumEnv(MetaGoalReachingEnv):
         }
         return sampled_task_config
 
-    def reset(self, sample_new_goal: bool = True, predefined_goal=None) -> Dict[str, np.ndarray]:
+    def reset(
+        self, sample_new_goal: bool = True, predefined_goal=None
+    ) -> Dict[str, np.ndarray]:
         if sample_new_goal:
             self._base_env.sample_goal()
         elif predefined_goal is not None:
