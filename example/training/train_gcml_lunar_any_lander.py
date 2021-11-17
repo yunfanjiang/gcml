@@ -14,7 +14,7 @@ if __name__ == "__main__":
     )
 
     trainer = GCML(
-        experiment_name="gcml_example",
+        experiment_name="gcml_lunar_lander_example",
         meta_env=meta_env,
         meta_learner=meta_learner,
         learner_in_size=2 * 4 + 8,
