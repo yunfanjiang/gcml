@@ -26,8 +26,8 @@ def _metric_fn(curr_theta, goal_theta):
 
 
 class MetaPendulumEnv(MetaGoalReachingEnv):
-    def __init__(self):
-        base_env = PendulumEnv()
+    def __init__(self, goal_threshold):
+        base_env = PendulumEnv(goal_threshold)
 
         task_config_space = gym.spaces.Dict(
             {

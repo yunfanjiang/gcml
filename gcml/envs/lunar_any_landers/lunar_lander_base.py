@@ -85,7 +85,7 @@ class LunarLander(GoalReachingEnv, EzPickle):
 
     continuous = False
 
-    def __init__(self):
+    def __init__(self, goal_threshold):
         EzPickle.__init__(self)
         GoalReachingEnv.__init__(self)
         self.seed()
@@ -97,6 +97,7 @@ class LunarLander(GoalReachingEnv, EzPickle):
         self.particles = []
 
         self.prev_reward = None
+        self.goal_threshold = goal_threshold
 
         # prepare base obs space
         self.observation_space = spaces.Dict(
@@ -396,13 +397,17 @@ class LunarLander(GoalReachingEnv, EzPickle):
         if not self.lander.awake:
             done = True
 
+        reward = 0
+        if np.linalg.norm(state[:2]-self._goal) <= self.goal_threshold:
+            reward = 1
+
         # prepare obs dict
         obs_dict = {
             "base_obs": np.array(state, dtype=np.float32),
             "achieved_goal": np.array(state[:2], dtype=np.float32),
             "achieved_state_goal": np.array(state[:2], dtype=np.float32),
         }
-        return obs_dict, 0, done, {}
+        return obs_dict, reward, done, {}
 
     def render(self, mode="human"):
         # return np.ones((600, 400, 3)).astype(int)

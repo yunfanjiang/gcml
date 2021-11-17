@@ -7,7 +7,8 @@ from gcml.models import MetaGoalReachAgentDiscrete
 
 
 if __name__ == "__main__":
-    meta_env = LunarAnyLander()
+    goal_threshold = 0.05
+    meta_env = LunarAnyLander(goal_threshold)
     meta_learner = MetaGoalReachAgentDiscrete(
         n_layers=3, activation=F.relu, device=U.get_device(),
     )
@@ -26,6 +27,7 @@ if __name__ == "__main__":
         inner_lr=1e-3,
         loss_fn=F.cross_entropy,
         optim_kwargs={},
+        goal_threshold=goal_threshold,
     )
 
     trainer.train()

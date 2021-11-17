@@ -8,7 +8,7 @@ from gcml.envs.base import GoalReachingEnv
 class PendulumEnv(GoalReachingEnv):
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 30}
 
-    def __init__(self):
+    def __init__(self, goal_threshold):
         GoalReachingEnv.__init__(self)
 
         self.max_angular_speed = 8.0
@@ -21,6 +21,7 @@ class PendulumEnv(GoalReachingEnv):
         self.state = None
         self.last_action = None
         self.viewer = None
+        self.goal_threshold = goal_threshold
 
         obs_high = np.array([1.0, 1.0, self.max_angular_speed], dtype=np.float32)
         goal_high = np.array([1.0, 1.0], dtype=np.float32)
@@ -58,11 +59,6 @@ class PendulumEnv(GoalReachingEnv):
         action *= self.action_scale
         action = np.clip(action, -self.max_torque, self.max_torque)
         self.last_action = action
-        costs = (
-            angle_normalize(theta) ** 2
-            + 0.1 * angular_speed ** 2
-            + 0.001 * (action ** 2)
-        )
         new_angular_speed = (
             angular_speed
             + (3 * g / (2 * l) * np.sin(theta) + 3.0 / (m * l ** 2) * action) * dt
@@ -73,7 +69,11 @@ class PendulumEnv(GoalReachingEnv):
         new_theta = theta + new_angular_speed * dt
         self.state = np.array([new_theta, new_angular_speed])
 
-        return self._get_obs_dict(), -costs, False, {}
+        reward = 0
+        if abs(self.state[0] - self._goal) <= self.goal_threshold:
+            reward = 1
+
+        return self._get_obs_dict(), reward, False, {}
 
     def reset(self, g: float, m: float, l: float):
         self.g = g

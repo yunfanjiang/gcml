@@ -24,9 +24,9 @@ def _metric_fn(cur_coordinate: np.ndarray, goal_coordinate: np.ndarray):
 
 
 class LunarAnyLander(MetaGoalReachingEnv):
-    def __init__(self):
+    def __init__(self, goal_threshold):
         # create base env
-        base_env = LunarLander()
+        base_env = LunarLander(goal_threshold)
 
         # prepare task config space
         task_config_space = gym.spaces.Dict(

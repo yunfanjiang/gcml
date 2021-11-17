@@ -8,7 +8,8 @@ from gcml.models import MetaGoalReachAgentContinuous
 
 
 if __name__ == "__main__":
-    meta_env = MetaPendulumEnv()
+    goal_threshold = 0.05
+    meta_env = MetaPendulumEnv(goal_threshold)
     meta_learner = MetaGoalReachAgentContinuous(
         n_layers=3, activation=F.relu, device=U.get_device(), std=0.1
     )
@@ -27,6 +28,7 @@ if __name__ == "__main__":
         inner_lr=1e-3,
         loss_fn=L.mse_loss,
         optim_kwargs={},
+        goal_threshold=goal_threshold,
     )
 
     trainer.train()
