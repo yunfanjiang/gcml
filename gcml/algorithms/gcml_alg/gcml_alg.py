@@ -91,7 +91,7 @@ class GCML(GCLBase):
             params=list(meta_parameters.values()), lr=outer_lr, **optim_kwargs,
         )
         self._inner_lr = {
-            k: torch.tensor(inner_lr, requires_grad=learn_inner_lr)
+            k: torch.tensor(inner_lr, requires_grad=learn_inner_lr, device=self._device)
             for k in self._meta_parameters.keys()
         }
 
