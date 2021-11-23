@@ -14,11 +14,16 @@ class MetaGoalReachAgentBase(object):
     """
 
     def __init__(
-        self, n_layers: int, activation: Callable[[torch.Tensor], torch.Tensor], device,
+        self,
+        n_layers: int,
+        activation: Callable[[torch.Tensor], torch.Tensor],
+        device,
+        use_task_config: bool = False,
     ):
         self._n_layers = n_layers
         self._activation = activation
         self._device = device
+        self._use_task_config = use_task_config
 
     def _get_logits(
         self,
@@ -36,6 +41,8 @@ class MetaGoalReachAgentBase(object):
             ],
             dim=-1,
         )
+        if self._use_task_config:
+            inputs = torch.cat([inputs, input_dict["task_config"].float()], dim=-1)
         x = inputs
         for i in range(self._n_layers - 1):
             x = F.linear(input=x, weight=parameters[f"w{i}"], bias=parameters[f"b{i}"],)
@@ -88,9 +95,13 @@ class MetaGoalReachAgentContinuous(MetaGoalReachAgentBase):
         activation: Callable[[torch.Tensor], torch.Tensor],
         device,
         std: float,
+        use_task_config: bool = False,
     ):
         super(MetaGoalReachAgentContinuous, self).__init__(
-            n_layers=n_layers, activation=activation, device=device,
+            n_layers=n_layers,
+            activation=activation,
+            device=device,
+            use_task_config=use_task_config,
         )
         self._std = std
 
