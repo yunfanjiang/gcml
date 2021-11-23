@@ -340,17 +340,13 @@ class GCML(GCLBase):
                     "loss/train", outer_loss.item(), step_idx,
                 )
                 self._writer.add_scalar(
-                    "train_success_rate/pre_adapt_support",
-                    pre_adapt_distance,
-                    step_idx,
+                    "train_distance/pre_adapt_support", pre_adapt_distance, step_idx,
                 )
                 self._writer.add_scalar(
-                    "train_success_rate/post_adapt_support",
-                    post_adapt_distance,
-                    step_idx,
+                    "train_distance/post_adapt_support", post_adapt_distance, step_idx,
                 )
                 self._writer.add_scalar(
-                    "train_success_rate/post_adapt_query", query_distance, step_idx,
+                    "train_distance/post_adapt_query", query_distance, step_idx,
                 )
 
             if step_idx % self._val_interval == 0:
@@ -373,15 +369,13 @@ class GCML(GCLBase):
                     "loss/val", outer_loss.item(), step_idx,
                 )
                 self._writer.add_scalar(
-                    "val_success_rate/pre_adapt_support", pre_adapt_distance, step_idx,
+                    "val_distance/pre_adapt_support", pre_adapt_distance, step_idx,
                 )
                 self._writer.add_scalar(
-                    "val_success_rate/post_adapt_support",
-                    post_adapt_distance,
-                    step_idx,
+                    "val_distance/post_adapt_support", post_adapt_distance, step_idx,
                 )
                 self._writer.add_scalar(
-                    "val_success_rate/post_adapt_query", query_distance, step_idx,
+                    "val_distance/post_adapt_query", query_distance, step_idx,
                 )
 
     def test(self, *args, **kwargs):
