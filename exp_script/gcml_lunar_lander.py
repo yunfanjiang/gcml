@@ -16,7 +16,7 @@ def main(arg):
     )
 
     if arg.exp_name == "auto":
-        exp_name = f"lander_outer_lr:{arg.outer_lr}_inner_lr:{arg.inner_lr}_n_tasks:{arg.n_tasks}_traj_len:{arg.traj_len}"
+        exp_name = f"lander_outer_lr:{arg.outer_lr}_inner_lr:{arg.inner_lr}_learn_inner_lr:{arg.learn_inner_lr}_n_tasks:{arg.n_tasks}_traj_len:{arg.traj_len}"
     else:
         exp_name = arg.exp_name
 
@@ -32,6 +32,7 @@ def main(arg):
         optimizer_name="Adam",
         outer_lr=arg.outer_lr,
         inner_lr=arg.inner_lr,
+        learn_inner_lr=arg.learn_inner_lr,
         loss_fn=F.cross_entropy,
         optim_kwargs={},
         goal_threshold=0,  # doesn't matter
@@ -46,6 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("--exp_name", type=str, default="auto")
     parser.add_argument("--outer_lr", type=float, default=1e-3)
     parser.add_argument("--inner_lr", type=float, default=0.4)
+    parser.add_argument("--learn_inner_lr", default=True, action="store_false")
     parser.add_argument("--n_tasks", type=int, default=10)
     parser.add_argument("--traj_len", type=int, default=50)
     main_args = parser.parse_args()

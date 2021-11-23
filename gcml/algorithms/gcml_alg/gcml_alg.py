@@ -31,6 +31,7 @@ class GCML(GCLBase):
         optimizer_name: str,
         outer_lr: float,
         inner_lr: float,
+        learn_inner_lr: bool,
         loss_fn: Callable,
         optim_kwargs: dict,
         goal_threshold: float,
@@ -89,7 +90,10 @@ class GCML(GCLBase):
         self._optimizer = optimizer_class(
             params=list(meta_parameters.values()), lr=outer_lr, **optim_kwargs,
         )
-        self._inner_lr = inner_lr
+        self._inner_lr = {
+            k: torch.tensor(inner_lr, requires_grad=learn_inner_lr)
+            for k in self._meta_parameters.keys()
+        }
 
         # task relevant parameters
         assert n_shots >= 1, f"Invalid number of shots provided {n_shots}"
@@ -166,7 +170,7 @@ class GCML(GCLBase):
             )
             # now compute the adapted parameters
             parameters = {
-                k: initial_param - self._inner_lr * each_grad
+                k: initial_param - self._inner_lr[k] * each_grad
                 for each_grad, (k, initial_param) in zip(adapt_grad, parameters.items())
             }
 
