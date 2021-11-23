@@ -15,6 +15,7 @@ from gym import spaces
 from gym.utils import seeding, EzPickle
 
 from gcml.envs.base import GoalReachingEnv
+from gcml.envs.lunar_any_landers.metric import metric_fn
 
 # Rocket trajectory optimization is a classic topic in Optimal Control.
 #
@@ -398,7 +399,7 @@ class LunarLander(GoalReachingEnv, EzPickle):
             done = True
 
         reward = 0
-        if np.linalg.norm(state[:2] - self._goal) <= self.goal_threshold:
+        if metric_fn(np.array(state[:2]), self._goal) <= self.goal_threshold:
             reward = 1
 
         # prepare obs dict

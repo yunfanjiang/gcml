@@ -10,17 +10,7 @@ from gcml.envs.lunar_any_landers.lunar_lander_base import (
     CHUNKS,
 )
 from gcml.envs.base import MetaGoalReachingEnv
-
-
-def _metric_fn(cur_coordinate: np.ndarray, goal_coordinate: np.ndarray):
-    """
-    Calculate Euclidean distance between current and goal coordinates.
-    """
-    if cur_coordinate.ndim == 1:
-        cur_coordinate = cur_coordinate[np.newaxis, ...]
-    if goal_coordinate.ndim == 1:
-        goal_coordinate = goal_coordinate[np.newaxis, ...]
-    return np.linalg.norm(cur_coordinate - goal_coordinate, axis=-1)
+from gcml.envs.lunar_any_landers.metric import metric_fn
 
 
 class LunarAnyLander(MetaGoalReachingEnv):
@@ -45,7 +35,7 @@ class LunarAnyLander(MetaGoalReachingEnv):
 
         super(LunarAnyLander, self).__init__(
             base_env=base_env,
-            metric_fn=_metric_fn,
+            metric_fn=metric_fn,
             task_config_space=task_config_space,
             obs_key="base_obs",
             achieved_goal_key="achieved_goal",

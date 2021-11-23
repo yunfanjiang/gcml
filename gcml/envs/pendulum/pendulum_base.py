@@ -3,6 +3,7 @@ from gym import spaces
 from gym.utils import seeding
 from os import path
 from gcml.envs.base import GoalReachingEnv
+from gcml.envs.pendulum.metric import metric_fn
 
 
 class PendulumEnv(GoalReachingEnv):
@@ -70,7 +71,7 @@ class PendulumEnv(GoalReachingEnv):
         self.state = np.array([new_theta, new_angular_speed])
 
         reward = 0
-        if abs(self.state[0] - self._goal) <= self.goal_threshold:
+        if metric_fn([self.state[0]], [self._goal]) <= self.goal_threshold:
             reward = 1
 
         return self._get_obs_dict(), reward, False, {}
