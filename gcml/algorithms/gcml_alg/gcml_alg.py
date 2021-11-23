@@ -45,6 +45,8 @@ class GCML(GCLBase):
         val_interval: int = 100,
         n_test_episodes_per_task: int = 10,
         tb_log_dir: str = "tblogs",
+        save_model_dir: str = "saved_model",
+        save_model_interval: int = 500,
     ):
         self._device = device
 
@@ -132,6 +134,13 @@ class GCML(GCLBase):
         # tensorboard
         tb_dir = os.path.join(tb_log_dir, experiment_name)
         self._writer = tensorboard.SummaryWriter(log_dir=tb_dir)
+
+        # save model
+        save_dir = os.path.join(save_model_dir, experiment_name)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        self._save_dir = save_dir
+        self._save_model_interval = save_model_interval
 
     def _inner_loop_adaptation(
         self, obs_dict: Dict[str, torch.Tensor], targets: torch.Tensor, train: bool,
@@ -377,6 +386,21 @@ class GCML(GCLBase):
                 self._writer.add_scalar(
                     "val_distance/post_adapt_query", query_distance, step_idx,
                 )
+
+            if step_idx % self._save_model_interval == 0:
+                self._save(step_idx)
+
+    def _save(self, checkpoint_step):
+        optimizer_state_dict = self._optimizer.state_dict()
+        save_file_name = os.path.join(self._save_dir, f"{checkpoint_step}.pt")
+        torch.save(
+            dict(
+                meta_parameters=self._meta_parameters,
+                inner_lrs=self._inner_lr,
+                optimizer_state_dict=optimizer_state_dict,
+            ),
+            save_file_name,
+        )
 
     def test(self, *args, **kwargs):
         pass
