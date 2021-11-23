@@ -398,7 +398,7 @@ class LunarLander(GoalReachingEnv, EzPickle):
             done = True
 
         reward = 0
-        if np.linalg.norm(state[:2]-self._goal) <= self.goal_threshold:
+        if np.linalg.norm(state[:2] - self._goal) <= self.goal_threshold:
             reward = 1
 
         # prepare obs dict
