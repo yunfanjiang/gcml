@@ -23,6 +23,7 @@ def main(arg):
             f"lander_outer_lr:{arg.outer_lr}_inner_lr:{arg.inner_lr}_learn_inner_lr:{arg.learn_inner_lr}_"
             f"use_task_config:{arg.use_task_config}_n_tasks:{arg.n_tasks}_traj_len:{arg.traj_len}"
         )
+        exp_name = exp_name + f"_run{arg.n_run}"
     else:
         exp_name = arg.exp_name
 
@@ -58,5 +59,6 @@ if __name__ == "__main__":
     parser.add_argument("--n_tasks", type=int, default=10)
     parser.add_argument("--traj_len", type=int, default=50)
     parser.add_argument("--use_task_config", default=False, action="store_true")
+    parser.add_argument("--n_run", default=0)
     main_args = parser.parse_args()
     main(main_args)
