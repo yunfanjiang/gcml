@@ -90,9 +90,9 @@ class PendulumEnv(GoalReachingEnv):
         obs_dict = {
             "base_obs": np.array(
                 [np.cos(theta), np.sin(theta), angular_speed], dtype=np.float32
-            ),
-            "achieved_goal": np.array([np.cos(theta), np.sin(theta)], dtype=np.float32),
-            "achieved_state_goal": np.array([theta], dtype=np.float32),
+            ).reshape(3,),
+            "achieved_goal": np.array([np.cos(theta), np.sin(theta)], dtype=np.float32).reshape(2,),
+            "achieved_state_goal": np.array([theta], dtype=np.float32).reshape(1,),
         }
         return obs_dict
 
