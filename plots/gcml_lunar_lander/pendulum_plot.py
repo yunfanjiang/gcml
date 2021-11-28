@@ -23,6 +23,8 @@ def smooth(
 
 
 def normalize_score(x, max):
+    print(type(max))
+    print(type(x))
     return (max - x) / max
 
 
@@ -37,7 +39,7 @@ if __name__ == "__main__":
     for file in files:
         df = pd.read_csv(file)
         df = df[:N]
-        ys.append(normalize_score(smooth(df['Value'].to_numpy(), 0.97), max=2 * np.sqrt(2)))
+        ys.append(normalize_score(smooth(df['Value'].to_numpy(), 0.97), max=np.float64(np.pi)))
         xs.append(df['Step'].to_numpy())
     x = np.stack(xs, axis=0)
     y = np.stack(ys, axis=0)
@@ -52,7 +54,7 @@ if __name__ == "__main__":
     lower = y_mean - y_std
     axarr[0].fill_between(x, lower, upper, alpha=.3)
 
-    ppo = [normalize_score(0.99, max=2*np.sqrt(2))] * len(x)
+    ppo = [normalize_score(1.56, max=np.float64(np.pi))] * len(x)
     sns.lineplot(x=x, y=ppo, label='PPO', ax=axarr[1], color='r', linestyle='--')
 
     plt.legend(loc='best')
