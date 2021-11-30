@@ -21,6 +21,20 @@ class PendulumRLlibMetaEnv(TaskSettableEnv):
         self._task_config_space = task_config_space
 
         self._base_env = PendulumEnv(goal_threshold=goal_threshold)
+        base_obs_space = self._base_env.observation_space
+        base_obs_space_dict = {k: base_obs_space[k] for k in base_obs_space}
+        goal_high = np.array([1.0, 1.0], dtype=np.float32)
+        base_obs_space_dict.update(
+            {
+                "desired_goal": gym.spaces.Box(
+                    low=-goal_high, high=goal_high, dtype=np.float32, shape=(2,)
+                ),
+                "desired_state_goal": gym.spaces.Box(
+                    low=-np.pi, high=np.pi, dtype=np.float32, shape=(1,)
+                ),
+            }
+        )
+        self.observation_space = gym.spaces.Dict(base_obs_space_dict)
         self._episode_len = episode_len
         self._task_config = {
             key: self._task_config_space[key].sample()
@@ -31,10 +45,6 @@ class PendulumRLlibMetaEnv(TaskSettableEnv):
     @property
     def action_space(self):
         return self._base_env.action_space
-
-    @property
-    def observation_space(self):
-        return self._base_env.observation_space
 
     def seed(self, seed=None):
         return self._base_env.seed(seed)
@@ -60,6 +70,12 @@ class PendulumRLlibMetaEnv(TaskSettableEnv):
         self._base_env.sample_goal()
         task_config = {k: v.item() for k, v in self._task_config.items()}
         base_obs = self._base_env.reset(**task_config)
+        goal = self._base_env.goal
+        goal_obs = {
+            "desired_goal": np.array([np.cos(goal), np.sin(goal)], dtype=np.float32),
+            "desired_state_goal": np.array([goal], dtype=np.float32),
+        }
+        base_obs.update(goal_obs)
         return base_obs
 
     def step(self, action):
@@ -72,4 +88,12 @@ class PendulumRLlibMetaEnv(TaskSettableEnv):
         if not done:
             reward = 0
         self._step_counter += 1
+
+        goal = self._base_env.goal
+        goal_obs = {
+            "desired_goal": np.array([np.cos(goal), np.sin(goal)], dtype=np.float32),
+            "desired_state_goal": np.array([goal], dtype=np.float32),
+        }
+        next_base_obs.update(goal_obs)
+
         return next_base_obs, reward, done, info
