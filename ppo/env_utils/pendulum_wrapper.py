@@ -13,7 +13,7 @@ class PendulumWrapper(gym.Wrapper):
         self.m = self.np_random.uniform(low=0.5, high=1.5)
         self.l = self.np_random.uniform(low=0.5, high=1.5)
         self.env.reset(self.g, self.m, self.l)
-        
+
         self._max_episode_steps = max_episode_steps
         self._elapsed_steps = None
 

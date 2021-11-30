@@ -33,27 +33,18 @@ if __name__ == "__main__":
     model = PPO(MultiInputPolicy, env, verbose=0)
 
     # Random Agent, before training
-    mean_episode_distance, std_episode_distance = evaluate(model, env, num_eval_episodes=1000, deterministic=True)
-    print(f"Before training: mean_episode_distance = {mean_episode_distance:.2f} +/- {std_episode_distance:.2f}")
+    mean_episode_distance, std_episode_distance = evaluate(
+        model, env, num_eval_episodes=1000, deterministic=True
+    )
+    print(
+        f"Before training: mean_episode_distance = {mean_episode_distance:.2f} +/- {std_episode_distance:.2f}"
+    )
 
     # Train the agent for 10000 steps, and evaluate the trained agent
     model.learn(total_timesteps=10000)
-    mean_episode_distance,  std_episode_distance = evaluate(model, env, num_eval_episodes=1000, deterministic=True)
-    print(f"After training: mean_episode_distance = {mean_episode_distance:.2f} +/- {std_episode_distance:.2f}")
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
+    mean_episode_distance, std_episode_distance = evaluate(
+        model, env, num_eval_episodes=1000, deterministic=True
+    )
+    print(
+        f"After training: mean_episode_distance = {mean_episode_distance:.2f} +/- {std_episode_distance:.2f}"
+    )

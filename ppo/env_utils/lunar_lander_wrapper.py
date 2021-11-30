@@ -7,12 +7,15 @@ from gcml.envs.lunar_any_landers.lunar_lander_base import (
     CHUNKS,
 )
 
+
 class LunarLanderWrapper(gym.Wrapper):
     def __init__(self, env, max_episode_steps):
         super().__init__(env)
         self.seed()
 
-        self.height = self.np_random.uniform(low=0, high=VIEWPORT_H / SCALE / 4, size=(CHUNKS + 1,))
+        self.height = self.np_random.uniform(
+            low=0, high=VIEWPORT_H / SCALE / 4, size=(CHUNKS + 1,)
+        )
         self.main_engine_power = self.np_random.uniform(low=13, high=20)
         self.side_engine_power = self.np_random.uniform(low=0.6, high=1)
         self.leg_height = self.np_random.uniform(low=8, high=12)
@@ -20,14 +23,14 @@ class LunarLanderWrapper(gym.Wrapper):
         self.lander_density = self.np_random.uniform(low=2, high=5)
         self.env.sample_goal(self.height)
         self.env.reset(
-            self.height, 
-            self.main_engine_power, 
-            self.side_engine_power, 
-            self.leg_height, 
-            self.leg_spring_torque, 
+            self.height,
+            self.main_engine_power,
+            self.side_engine_power,
+            self.leg_height,
+            self.leg_spring_torque,
             self.lander_density,
-            )
-        
+        )
+
         self._max_episode_steps = max_episode_steps
         self._elapsed_steps = None
 
@@ -56,4 +59,4 @@ class LunarLanderWrapper(gym.Wrapper):
             self.leg_height,
             self.leg_spring_torque,
             self.lander_density,
-            )
+        )
