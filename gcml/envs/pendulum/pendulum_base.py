@@ -68,6 +68,7 @@ class PendulumEnv(GoalReachingEnv):
             new_angular_speed, -self.max_angular_speed, self.max_angular_speed
         )
         new_theta = theta + new_angular_speed * dt
+        new_theta = np.arctan(np.sin(new_theta) / np.cos(new_theta))
         self.state = np.array([new_theta, new_angular_speed])
 
         reward = 0
@@ -91,7 +92,9 @@ class PendulumEnv(GoalReachingEnv):
             "base_obs": np.array(
                 [np.cos(theta), np.sin(theta), angular_speed], dtype=np.float32
             ).reshape(3,),
-            "achieved_goal": np.array([np.cos(theta), np.sin(theta)], dtype=np.float32).reshape(2,),
+            "achieved_goal": np.array(
+                [np.cos(theta), np.sin(theta)], dtype=np.float32
+            ).reshape(2,),
             "achieved_state_goal": np.array([theta], dtype=np.float32).reshape(1,),
         }
         return obs_dict
